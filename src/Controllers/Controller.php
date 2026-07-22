@@ -194,7 +194,14 @@ class Controller implements IPresenter
 			}
 		}
 
-		return $params;
+		$allowedKeys = [];
+
+		foreach ($methodParams as $key => $methodParam) {
+			$allowedKeys[$methodParam->getName()] = true;
+			$allowedKeys[$key] = true;
+		}
+
+		return array_intersect_key($params, $allowedKeys);
 	}
 
 	protected function process(): ?BaseResponse
