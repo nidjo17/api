@@ -141,6 +141,47 @@ class RequestTest extends TestCase
 		$this->assertCount(2, $request->items);
 	}
 
+	public function testSingleObjectContainer_WithNestedObject_BindsObject(): void
+	{
+		$request = new TestSingleContainerRequest();
+		$request->buildForm(['title' => 'first', 'single' => ['name' => 'nested']]);
+
+		$this->assertInstanceOf(SimpleRequest2::class, $request->single);
+		$this->assertSame('nested', $request->single->name);
+		$this->assertSame('first', $request->title);
+	}
+
+	public function testSingleObjectContainer_WithoutData_StaysNull(): void
+	{
+		$request = new TestSingleContainerRequest();
+		$request->buildForm(['title' => 'first']);
+
+		$this->assertNull($request->single);
+		$this->assertSame([], $request->items);
+	}
+
+	public function testSingleObjectContainer_AlongsideContainerList_BindsBoth(): void
+	{
+		$json = '{"single":{"name":"one"},"items":[{"name":"two"},{"name":"three"}]}';
+		$request = new TestSingleContainerRequest();
+		$request->buildForm(Json::decode($json, Json::FORCE_ARRAY));
+		$request->validate();
+
+		$this->assertInstanceOf(SimpleRequest2::class, $request->single);
+		$this->assertSame('one', $request->single->name);
+		$this->assertCount(2, $request->items);
+		$this->assertSame('two', $request->items[0]->name);
+		$this->assertSame('three', $request->items[1]->name);
+	}
+
+	public function testSingleObjectContainer_IsExportedByToArray(): void
+	{
+		$request = new TestSingleContainerRequest();
+		$request->buildForm(['single' => ['name' => 'nested']]);
+
+		$this->assertSame(['name' => 'nested'], $request->toArray()['single']->toArray());
+	}
+
 	public function testValidate_WithInvalidData_ShouldThrowException(): void
 	{
 		$this->expectException(ValidationException::class);
